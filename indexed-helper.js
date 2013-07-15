@@ -73,14 +73,43 @@ IDB.init = function(options,success,failure){
     };
 }
 
+IDB.getItemOnIndex = function(options, index, key, success, failure){
+    var onsuccess = function(db){
+        var boundKeyRange = IDBKeyRange.only(key);
+        console.log('boundKeyRange',boundKeyRange);
+        var cursorRequest = db.transaction(options.storeName)
+        .objectStore(options.storeName).index(index).openCursor(boundKeyRange);
+
+        cursorRequest.onsuccess = function(event) {
+            var cursor = cursorRequest.result || event.result;
+
+            if (cursor) {
+                console.log('idb.getItem',cursor);
+                success(cursor.value);
+            }
+            else {
+                console.log('no cursor');
+            }
+        };
+        cursorRequest.onerror = failure;
+    }
+
+    var onerror = failure; 
+    IDB.init(options,onsuccess,onerror);
+}
+
 IDB.getItem = function(options, key, success, failure){
     var onsuccess = function(db){
-        var request = db.transaction(options.storeName).objectStore(options.storeName).get(key);
-        request.onsuccess = function(event){
-            console.log('getItem',event);
-            success(event.target.result);
-        }
-        request.onerror = failure;
+        var boundKeyRange = IDBKeyRange.only(key);
+        var getRequest = db.transaction(options.storeName)
+        .objectStore(options.storeName).get(key);
+
+        getRequest.onsuccess = function(event) {
+            console.log('idb.getItem',event);
+            var result = event.target.result;
+            success(result);
+        };
+        getRequest.onerror = failure;
     }
     var onerror = failure; 
     IDB.init(options,onsuccess,onerror);
