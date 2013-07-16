@@ -65,10 +65,12 @@ IDB.init = function(options,success,failure){
                 }
             }
         }
+        console.log('onupgrade success',db);
         success(db);
     };
     request.onsuccess = function(event){
         var db = event.target.result;
+        console.log('success',db);
         success(db);
     };
 }
@@ -165,3 +167,31 @@ IDB.put = function(options, data, success, failure){
     var onerror = failure; 
     IDB.init(options,onsuccess,onerror);
 }
+
+// data should be an array of objects to be inserted
+IDB.batchInsert = function(options, data, success, failure) {
+    var onsuccess = function(db){
+        console.log('db',db);
+        var objectStore = db.transaction(options.storeName,"readwrite")
+        .objectStore(options.storeName);
+
+        putNext();
+        var i=0;
+
+        function putNext() {
+            if (i<data.length) {
+                objectStore.put(data[i]).onsuccess = putNext;
+                ++i;
+            } else {
+                console.log('populate complete');
+                success();
+            }
+        }
+
+    }
+    var onerror = failure;
+    IDB.init(options,onsuccess,onerror);
+}
+
+
+
