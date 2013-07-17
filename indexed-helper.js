@@ -21,6 +21,7 @@
 * }]
 *
 */
+
 function IDB(dbName,version,options,success,failure){
     this.dbName = dbName;
     this.version = version;
@@ -34,6 +35,7 @@ function IDB(dbName,version,options,success,failure){
     } else {
         this.options[options.storeName] = options;
     }
+    console.log('options',this.options);
 
     var request;
     if (!!this.version)
@@ -48,12 +50,10 @@ function IDB(dbName,version,options,success,failure){
     request.onupgradeneeded = function(event){
         var db = event.target.result;
         this.db = db;
-        for (var i=0; i < Object.keys(this.options).length; i++){
-            var opKey = Object.keys(this.options)[i];
-            var options = this.options[opKey];
+        var opKeys = Object.keys(this.options);
+        for (var i=0; i < opKeys.length; i++){
+            var options = this.options[opKeys[i]];
             var objectStore;
-
-            console.log('dealing with store:',options.storeName);
 
             if(!this.db.objectStoreNames.contains(options.storeName)){
                 if (!!options.keyPath)
@@ -64,9 +64,9 @@ function IDB(dbName,version,options,success,failure){
                 objectStore = event.currentTarget.transaction.objectStore(options.storeName);
             }
             if (!!options.indexes){
-                for (var i=0;i<options.indexes.length;i++){
-                    var indexName = options.indexes[i].name;
-                    var indexData = options.indexes[i];
+                for (var j=0;j<options.indexes.length;j++){
+                    var indexName = options.indexes[j].name;
+                    var indexData = options.indexes[j];
 
                     if(objectStore.indexNames.contains(indexName)){
                         // check if it complies
