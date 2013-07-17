@@ -184,3 +184,31 @@ IDB.prototype.put = function(storeName, data, success, failure){
     request.onsuccess = function(event){ success(); };
     request.onerror = failure;
 }
+
+// data should be an array of objects to be inserted
+IDB.batchInsert = function(options, data, success, failure) {
+    var onsuccess = function(db){
+        console.log('db',db);
+        var objectStore = db.transaction(options.storeName,"readwrite")
+        .objectStore(options.storeName);
+
+        putNext();
+        var i=0;
+
+        function putNext() {
+            if (i<data.length) {
+                objectStore.put(data[i]).onsuccess = putNext;
+                ++i;
+            } else {
+                console.log('populate complete');
+                success();
+            }
+        }
+
+    }
+    var onerror = failure;
+    IDB.init(options,onsuccess,onerror);
+}
+
+
+
