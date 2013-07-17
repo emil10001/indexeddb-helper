@@ -7,24 +7,40 @@ This is a wrapper library for IndexedDB. It's very basic, definitely not product
     
     // example options
     
+    /**
+     *
+     * options = {
+     *  storeName : 'your store name',
+     *  keyPath : 'inline key',
+     *  indexes : [{ name : 'indexName', unique : 'true/false' },{},...]
+     * }
+     *
+     * ------ OR -------
+     *
+     * options = [{
+     *  storeName : 'your store name',
+     *  keyPath : 'inline key',
+     *  indexes : [{ name : 'indexName', unique : 'true/false' },{},...]
+     * }, {
+     *  storeName : 'your second store name',
+     *  keyPath : 'inline key',
+     *  indexes : [{ name : 'indexName', unique : 'true/false' },{},...] 
+     * }] 
+     * 
+     */
+    
     var options = {
-        dbName : 'idb-todos',
-        version : 4,
         storeName : 'todos',
         keyPath : 'timeStamp',
         indexes : [{name : 'text', unique : false}]
     };
     
-    // entry looks like:
-    // { timeStamp : 1373869051860, text : 'test' }
-    // keyPath is timeStamp
-    // index on text
-    // timeStamp is an int (doesn't need to be, but it is)
+    var success = function(){console.log('success');};
+    var failure = function(){console.log('failure');};
     
-    // callbacks
     
     var getItemsSuccess = function(data){
-        console.log('success',data);
+        console.log('getItemsSuccess',data);
     };
     
     var errorCallback = function(){
@@ -35,32 +51,35 @@ This is a wrapper library for IndexedDB. It's very basic, definitely not product
         console.log('success'); 
     };
     
+    var getInit = function(transaction){
+        console.log('getInit',transaction);
+        if (transaction instanceof IDBTransaction)
+            idb.getInit(transaction, options.storeName, getItemsSuccess,errorCallback);
+        else
+            idb.getAll(options.storeName, getItemsSuccess,errorCallback);
+    };
+    
+    var getItems = function(){
+        idb.getAll(options.storeName, getItemsSuccess,errorCallback);
+        console.log('getItems'); 
+    };
+    
     var printItem = function(data){
         console.log('printItem ', data);
     };
     
-    // db requests
-    
-    var getItems = function(){
-        IDB.getAll(options, getItemsSuccess,errorCallback);
-    };
-    
     var getItem = function(key){
         console.log('getItem ',key);
-        // this actually tries to get items on either the keyPath or an index, only one should
-        // work, the other will fail. parseInt is used in the first call because timeStamp is a
-        // number, instead of a string
-        IDB.getItem(options, parseInt(key), printItem,errorCallback);
-        IDB.getItemOnIndex(options, options.indexes[0].name, key, printItem,errorCallback);
+        idb.getItem(options.storeName, parseInt(key), printItem,errorCallback);
+        idb.getItemOnIndex(options.storeName, options.indexes[0].name, key, printItem,errorCallback);
     }
     
     var deleteItem = function(item){
-        IDB.remove(options, item.timeStamp, getItems,errorCallback);
+        idb.remove(options.storeName, item.timeStamp, getItems,errorCallback);
     }
     
-    var addItem = function(){
-        IDB.put(options, {'timeStamp': new Date().getTime(), 'text' : $scope.itemname},getItems,errorCallback); 
-        $scope.itemname = ''; 
+    var addItem = function(item){
+        idb.put(options.storeName, {'timeStamp': new Date().getTime(), 'text' : item},getItems,errorCallback); 
     };
     
-    getItems();
+    var idb = new IDB('idb-todos',1,options,getInit,failure);
