@@ -188,7 +188,7 @@ IDB.prototype.getAll = function(storeName){
 IDB.prototype.remove = function(storeName, key){
     var request = this.getTransactionStore(storeName, "readwrite").delete(key);
     request.onsuccess = function(event){
-        IDB.events.emit('remove',[this.dbName,storeName];
+        IDB.events.emit('remove',[this.dbName,storeName]);
     };
     request.onerror = IDB.failure;
 }
@@ -196,7 +196,7 @@ IDB.prototype.remove = function(storeName, key){
 IDB.prototype.put = function(storeName, data){
     var request = this.getTransactionStore(storeName, "readwrite").put(data);
     request.onsuccess = function(event){
-        IDB.events.emit('put',[this.dbName,storeName];
+        IDB.events.emit('put',[this.dbName,storeName]);
     };
     request.onerror = IDB.failure;
 }
@@ -214,7 +214,7 @@ IDB.batchInsert = function(storeName, data) {
             ++i;
         } else {
             console.log('populate complete');
-            IDB.events.emit('batchinsert',[this.dbName,storeName];
+            IDB.events.emit('batchinsert',[this.dbName,storeName]);
         }
     }
 
