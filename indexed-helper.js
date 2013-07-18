@@ -22,7 +22,7 @@
 *
 */
 
-function IDB(dbName,version,options,success,failure){
+function IDB(dbName,version,options){
     this.dbName = dbName;
     this.version = version;
     this.db = null;
@@ -45,7 +45,7 @@ function IDB(dbName,version,options,success,failure){
 
     request.onerror = function(event){
         console.log('failed to open db ' + event);
-        failure();
+        IDB.failure();
     };
     request.onupgradeneeded = function(event){
         var db = event.target.result;
@@ -82,12 +82,20 @@ function IDB(dbName,version,options,success,failure){
                 }
             }
         }
-        success(event.target.transaction);
+        //success(event.target.transaction);
+        IDB.events.emit('dbopenupgrade', [this.dbName, event.target.transaction]);
     }.bind(this);
     request.onsuccess = function(event){
         this.db = event.target.result;
-        success();
+        //success();
+        IDB.events.emit('dbopen', [this.dbName]);
     }.bind(this);
+}
+
+IDB.events = new EventEmitter();
+
+IDB.failure = function(){
+    IDB.events.emit('failure');
 }
 
 // https://github.com/jensarps/IDBWrapper/blob/master/idbstore.js
@@ -112,7 +120,7 @@ IDB.prototype.getTransactionStore = function(storeName,mode){
         return this.db.transaction(storeName,mode).objectStore(storeName);
 }
 
-IDB.prototype.getItemOnIndex = function(storeName, index, key, success, failure){
+IDB.prototype.getItemOnIndex = function(storeName, index, key){
     var boundKeyRange = IDBKeyRange.only(key);
 
     var cursorRequest = this.getTransactionStore(storeName)
@@ -121,25 +129,27 @@ IDB.prototype.getItemOnIndex = function(storeName, index, key, success, failure)
     cursorRequest.onsuccess = function(event) {
         var cursor = cursorRequest.result || event.result;
         if (cursor) {
-            success(cursor.value);
+            IDB.events.emit('getitem',[this.dbName, storeName, cursor.value]);
         }
         else {
             console.log('no cursor');
+            IDB.failure();
         }
     };
-    cursorRequest.onerror = failure;
+    cursorRequest.onerror = IDB.failure;
 }
 
-IDB.prototype.getItem = function(storeName, key, success, failure){
+IDB.prototype.getItem = function(storeName, key){
     var getRequest = this.getTransactionStore(storeName).get(key);
 
     getRequest.onsuccess = function(event) {
-        success(event.target.result);
+        //success(event.target.result);
+        IDB.events.emit('getitem',[this.dbName, storeName, event.target.result]);
     };
-    getRequest.onerror = failure;
+    getRequest.onerror = IDB.failure;
 }
 
-IDB.prototype.getInit = function(transaction, storeName, success, failure){
+IDB.prototype.getInit = function(transaction, storeName){
     var objectStore = transaction.objectStore(storeName);
     var results = [];
 
@@ -150,14 +160,15 @@ IDB.prototype.getInit = function(transaction, storeName, success, failure){
             cursor.continue();
         }
         else {
-            success(results);
+            //success(results);
+            IDB.events.emit('getinit',[this.dbName, storeName, results]);
         }
     };
-    objectStore.onerror = failure;
+    objectStore.onerror = IDB.failure;
 }
 
-IDB.prototype.getAll = function(storeName, success, failure){
-    var objectStore = this.getTransactionStore(storeName); 
+IDB.prototype.getAll = function(storeName){
+    var objectStore = this.getTransactionStore(storeName);
     var results = [];
 
     objectStore.openCursor().onsuccess = function(event) {
@@ -167,48 +178,46 @@ IDB.prototype.getAll = function(storeName, success, failure){
             cursor.continue();
         }
         else {
-            success(results);
+            //success(results);
+            IDB.events.emit('getall',[this.dbName, storeName, results]);
         }
     };
-    objectStore.onerror = failure;
+    objectStore.onerror = IDB.failure;
 }
 
-IDB.prototype.remove = function(storeName, key, success, failure){
+IDB.prototype.remove = function(storeName, key){
     var request = this.getTransactionStore(storeName, "readwrite").delete(key);
-    request.onsuccess = function(event){ success(); };
-    request.onerror = failure;
+    request.onsuccess = function(event){
+        IDB.events.emit('remove',[this.dbName,storeName];
+    };
+    request.onerror = IDB.failure;
 }
 
-IDB.prototype.put = function(storeName, data, success, failure){
+IDB.prototype.put = function(storeName, data){
     var request = this.getTransactionStore(storeName, "readwrite").put(data);
-    request.onsuccess = function(event){ success(); };
-    request.onerror = failure;
+    request.onsuccess = function(event){
+        IDB.events.emit('put',[this.dbName,storeName];
+    };
+    request.onerror = IDB.failure;
 }
 
 // data should be an array of objects to be inserted
-IDB.batchInsert = function(options, data, success, failure) {
-    var onsuccess = function(db){
-        console.log('db',db);
-        var objectStore = db.transaction(options.storeName,"readwrite")
-        .objectStore(options.storeName);
+IDB.batchInsert = function(storeName, data) {
+    var objectStore = this.getTransactionStore(storeName,"readwrite");
 
-        putNext();
-        var i=0;
-
-        function putNext() {
-            if (i<data.length) {
-                objectStore.put(data[i]).onsuccess = putNext;
-                ++i;
-            } else {
-                console.log('populate complete');
-                success();
-            }
+    var i=0;
+    function putNext() {
+        if (i<data.length) {
+            var request = objectStore.put(data[i]);
+            request.onsuccess = putNext;
+            request.onerror = IDB.failure;
+            ++i;
+        } else {
+            console.log('populate complete');
+            IDB.events.emit('batchinsert',[this.dbName,storeName];
         }
-
     }
-    var onerror = failure;
-    IDB.init(options,onsuccess,onerror);
+
+    putNext();
 }
-
-
 
