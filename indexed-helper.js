@@ -221,3 +221,7 @@ IDB.batchInsert = function(storeName, data) {
     putNext();
 }
 
+define (function(){
+    return IDB;
+});
+
