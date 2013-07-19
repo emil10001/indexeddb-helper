@@ -216,7 +216,7 @@ IDB.batchInsert = function(storeName, data) {
             console.log('populate complete');
             IDB.events.emit('batchinsert',[this.dbName,storeName]);
         }
-    }.bind(this)
+    }
 
     putNext();
 }
