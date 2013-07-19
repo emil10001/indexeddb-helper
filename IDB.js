@@ -135,7 +135,7 @@ IDB.prototype.getItemOnIndex = function(storeName, index, key){
             console.log('no cursor');
             IDB.failure();
         }
-    };
+    }.bind(this);
     cursorRequest.onerror = IDB.failure;
 }
 
@@ -145,7 +145,7 @@ IDB.prototype.getItem = function(storeName, key){
     getRequest.onsuccess = function(event) {
         //success(event.target.result);
         IDB.events.emit('getitem',[this.dbName, storeName, event.target.result]);
-    };
+    }.bind(this);
     getRequest.onerror = IDB.failure;
 }
 
@@ -163,7 +163,7 @@ IDB.prototype.getInit = function(transaction, storeName){
             //success(results);
             IDB.events.emit('getinit',[this.dbName, storeName, results]);
         }
-    };
+    }.bind(this);
     objectStore.onerror = IDB.failure;
 }
 
@@ -181,7 +181,7 @@ IDB.prototype.getAll = function(storeName){
             //success(results);
             IDB.events.emit('getall',[this.dbName, storeName, results]);
         }
-    };
+    }.bind(this);
     objectStore.onerror = IDB.failure;
 }
 
@@ -189,7 +189,7 @@ IDB.prototype.remove = function(storeName, key){
     var request = this.getTransactionStore(storeName, "readwrite").delete(key);
     request.onsuccess = function(event){
         IDB.events.emit('remove',[this.dbName,storeName]);
-    };
+    }.bind(this);
     request.onerror = IDB.failure;
 }
 
@@ -197,7 +197,7 @@ IDB.prototype.put = function(storeName, data){
     var request = this.getTransactionStore(storeName, "readwrite").put(data);
     request.onsuccess = function(event){
         IDB.events.emit('put',[this.dbName,storeName]);
-    };
+    }.bind(this);
     request.onerror = IDB.failure;
 }
 
@@ -216,7 +216,7 @@ IDB.batchInsert = function(storeName, data) {
             console.log('populate complete');
             IDB.events.emit('batchinsert',[this.dbName,storeName]);
         }
-    }
+    }.bind(this)
 
     putNext();
 }
