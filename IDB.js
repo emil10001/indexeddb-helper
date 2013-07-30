@@ -92,7 +92,9 @@ function IDB(dbName,version,options){
     }.bind(this);
 }
 
-IDB.events = new EventEmitter();
+require(['EventEmitter'],function(EventEmitter){
+    IDB.events = new EventEmitter();
+});
 
 IDB.failure = function(){
     IDB.events.emit('failure');
