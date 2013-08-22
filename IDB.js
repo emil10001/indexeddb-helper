@@ -204,11 +204,11 @@ IDB.prototype.put = function(storeName, data){
 }
 
 // data should be an array of objects to be inserted
-IDB.batchInsert = function(storeName, data) {
+IDB.prototype.batchInsert = function(storeName, data) {
     var objectStore = this.getTransactionStore(storeName,"readwrite");
 
     var i=0;
-    function putNext() {
+    var putNext = function() {
         if (i<data.length) {
             var request = objectStore.put(data[i]);
             request.onsuccess = putNext;
@@ -218,7 +218,7 @@ IDB.batchInsert = function(storeName, data) {
             console.log('populate complete');
             IDB.events.emit('batchinsert',[this.dbName,storeName]);
         }
-    }
+    }.bind(this);
 
     putNext();
 }
